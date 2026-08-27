@@ -1,14 +1,14 @@
-import app
+import utils
 
 def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
-    work_start = app.time_to_minutes(settings.get("work_start", "08:00"))
-    work_end = app.time_to_minutes(settings.get("work_end", "21:00"))
+    work_start = utils.time_to_minutes(settings.get("work_start", "08:00"))
+    work_end = utils.time_to_minutes(settings.get("work_end", "21:00"))
 
-    lunch_win_start = app.time_to_minutes(settings.get("lunch_window_start", "12:00"))
-    lunch_win_end = app.time_to_minutes(settings.get("lunch_window_end", "16:00"))
+    lunch_win_start = utils.time_to_minutes(settings.get("lunch_window_start", "12:00"))
+    lunch_win_end = utils.time_to_minutes(settings.get("lunch_window_end", "16:00"))
     lunch_dur = int(settings.get("lunch_duration_minutes", 60))
 
-    # Желаемое время обеда — 14:00 (если входит в окно)
+    # желаемое время обеда — 14:00 (если входит в окно)
     preferred_lunch_start = lunch_win_start
     if not (lunch_win_start <= preferred_lunch_start <= lunch_win_end - lunch_dur):
         preferred_lunch_start = lunch_win_start
@@ -20,8 +20,8 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
     for t in tasks:
         if t.get("type") == "fixed" and t.get("start_time") and t.get("end_time"):
             busy_blocks.append({
-                "start": app.time_to_minutes(t["start_time"]),
-                "end": app.time_to_minutes(t["end_time"])
+                "start": utils.time_to_minutes(t["start_time"]),
+                "end": utils.time_to_minutes(t["end_time"])
             })
             placed_tasks.append(t.copy())
 
@@ -60,8 +60,8 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
                 "title": "Lunch",
                 "type": "fixed",
                 "date": target_date,
-                "start_time": app.minutes_to_time(best_lunch_start),
-                "end_time": app.minutes_to_time(best_lunch_start + lunch_dur),
+                "start_time": utils.minutes_to_time(best_lunch_start),
+                "end_time": utils.minutes_to_time(best_lunch_start + lunch_dur),
                 "duration_minutes": lunch_dur,
                 "status": "scheduled"
             }
@@ -69,7 +69,7 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
             busy_blocks.append({"start": best_lunch_start, "end": best_lunch_start + lunch_dur})
             lunch_placed = True
 
-    # 4. Пересчитываем окна с учётом обеда
+    # пересчитываем окна с учётом обеда
     busy_blocks.sort(key=lambda x: x["start"])
     brakes = []
     current_cursor = work_start
@@ -81,7 +81,7 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
     if current_cursor < work_end:
         brakes.append({"start": current_cursor, "end": work_end})
 
-    # 5. Распределяем плавающие задачи
+    # распределяем плавающие задачи
     floating_tasks = [t.copy() for t in tasks if t.get("type") == "floating"]
     floating_tasks.sort(key=lambda x: x.get("duration_minutes", 0), reverse=True)
 
@@ -99,8 +99,8 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
                 task_end = slot_start + task_dur
 
                 task["date"] = target_date
-                task["start_time"] = app.minutes_to_time(task_start)
-                task["end_time"] = app.minutes_to_time(task_end)
+                task["start_time"] = utils.minutes_to_time(task_start)
+                task["end_time"] = utils.minutes_to_time(task_end)
                 task["status"] = "scheduled"
 
                 placed_tasks.append(task)
@@ -108,7 +108,7 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
             else:
                 i += 1
 
-    placed_tasks.sort(key=lambda x: app.time_to_minutes(x["start_time"]))
+    placed_tasks.sort(key=lambda x: utils.time_to_minutes(x["start_time"]))
 
     return {
         "scheduled_tasks": placed_tasks,
@@ -116,10 +116,7 @@ def planning_algorithm(tasks: list, settings: dict, target_date: str) -> dict:
         "lunch_placed": lunch_placed
     }
 
-# так мы берем набираем таски, пока не закончаться минуты в промежутке
-# потом записываем результаты такого варианта - сколько выполнено тасок, сколько времени осталось, ид тасок
 
-# записали самую большую потом пошлі с другой стороны допоплняя самымі мелкімі, пока промежуток не закончіться
 
 
 

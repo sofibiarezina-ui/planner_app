@@ -1,4 +1,4 @@
-import app, algorithm, general
+import utils, algorithm, general
 import random, os
 import streamlit as st
 import uuid  # Библиотека для создания уникальных ID
@@ -7,11 +7,11 @@ from calendar_view import render_mini_calendar
 
 
 
-# Настройка заголовка вкладки в браузере
+# настройка заголовка вкладки в браузере
 st.set_page_config(page_title="Planner TWI", layout="centered")
 
 # актуальные данные из JSON
-data = app.load_data()
+data = utils.load_data()
 
 #выбор пользователя
 st.sidebar.title("Settings")
@@ -53,19 +53,20 @@ if new_important_state != is_important:
     else:
         data["users"][curr_user]["important_dates"].remove(selected_date_str)
 
-    app.save_data(data)
+    utils.save_data(data)
     st.rerun()
 
 st.sidebar.divider()
 
-# 4. Отрисовка мини-календаря
+# отрисовка мини-календаря
 calendar_html = render_mini_calendar(selected_date, data["users"][curr_user])
 st.sidebar.markdown(calendar_html, unsafe_allow_html=True)
 
 
 
-
-# Контент для первой вкладки -------------------------------------------------------------------------------------------
+# =====================================================================================================================
+# Контент для первой вкладки ------------------------------------------------------------------------------------------
+# =====================================================================================================================
 with tab_calendar:
     #st.subheader("Your Timetable")
     #st.info("You will be able to add new tasks and use timelines")
@@ -121,7 +122,7 @@ with tab_calendar:
                     "lunch_duration_minutes": int(set_lunch_dur),
                 }
 
-                app.save_data(data)
+                utils.save_data(data)
                 st.success("Settings were saved.")
                 st.rerun()
 
@@ -130,13 +131,13 @@ with tab_calendar:
     # timeline -------------------------------------------------------------
     st.subheader(f"Timetable for {selected_date_str}")
 
-    curr_data = app.load_data()
+    curr_data = utils.load_data()
     user_tasks = curr_data["users"][curr_user]["tasks"]
 
     if not user_tasks:
         st.info("You don't have any tasks yet. Create new!")
     else:
-        # ЗАДАЧИ С НАЗНАЧЕННЫМ ВРЕМЕНЕМ (и фиксированные, и распределенные плавающие)
+        # задачи с назвначенным временем (и фиксированные, и распределенные плавающие)
         fixed_tasks = [
             t for t in user_tasks
             if t.get("start_time") and t.get("end_time") and (
@@ -145,7 +146,7 @@ with tab_calendar:
         ]
         fixed_tasks.sort(key=lambda x: x["start_time"])
 
-        # НЕРАСПРЕДЕЛЕННЫЕ ПЛАВАЮЩИЕ ЗАДАЧИ
+        # нераспределенные плавающие задачи
         floating_tasks = [
             t for t in user_tasks
             if t.get("type") == "floating" and not t.get("start_time") and (
@@ -153,10 +154,10 @@ with tab_calendar:
             )
         ]
 
+
+        # прогресс дня
         # ---------------------------------------------------------------------
-        # ПРОГРЕСС-БАР ДНЯ
-        # ---------------------------------------------------------------------
-        tot_cnt, comp_cnt, tot_min, comp_min, pct = app.get_daily_progress(data["users"][curr_user]["tasks"], selected_date_str)
+        tot_cnt, comp_cnt, tot_min, comp_min, pct = utils.get_daily_progress(data["users"][curr_user]["tasks"], selected_date_str)
 
         if tot_cnt > 0:
             c_p1, c_p2 = st.columns([3, 1])
@@ -182,7 +183,7 @@ with tab_calendar:
                 check_state = st.checkbox("", value=is_done, key=f"done_chk_{task['id']}")
                 if check_state != is_done:
                     task["status"] = "done" if check_state else "scheduled"
-                    app.save_data(curr_data)
+                    utils.save_data(curr_data)
                     st.rerun()
 
             with col_time:
@@ -209,7 +210,7 @@ with tab_calendar:
 
                         if st.form_submit_button("Save"):
                             formatted_start = new_start_time.strftime("%H:%M") if new_start_time else None
-                            has_conflict, conflict_title = app.check_fixed_task_conflict(
+                            has_conflict, conflict_title = utils.check_fixed_task_conflict(
                                 curr_data["users"][curr_user]["tasks"],
                                 task.get("date", selected_date_str),
                                 formatted_start,
@@ -227,14 +228,14 @@ with tab_calendar:
                                     dt_start = datetime.combine(datetime.today(), new_start_time)
                                     dt_end = dt_start + timedelta(minutes=int(new_duration))
                                     task["end_time"] = dt_end.strftime("%H:%M")
-                                app.save_data(curr_data)
+                                utils.save_data(curr_data)
                                 st.rerun()
 
             with col_delete:
                 if st.button("Delete", key=f"del_{task['id']}"):
                     curr_data["users"][curr_user]["tasks"] = [t for t in curr_data["users"][curr_user]["tasks"] if
                                                               t['id'] != task["id"]]
-                    app.save_data(curr_data)
+                    utils.save_data(curr_data)
                     st.rerun()
 
         # ------Floating-------------------------------------------------------------------------
@@ -285,7 +286,7 @@ with tab_calendar:
                                 task["end_date"] = str(new_end_d)
                                 task["date"] = str(new_start_d)
 
-                                app.save_data(curr_data)
+                                utils.save_data(curr_data)
                                 st.success("Updated")
                                 st.rerun()
 
@@ -295,7 +296,7 @@ with tab_calendar:
                         t for t in curr_data["users"][curr_user]["tasks"] if t["id"] != task["id"]
                     ]
 
-                    app.save_data(curr_data)
+                    utils.save_data(curr_data)
                     st.rerun()
 
 
@@ -341,7 +342,7 @@ with tab_calendar:
                     all_tasks.append(st_task)
 
             curr_data["users"][curr_user]["tasks"] = all_tasks
-            app.save_data(curr_data)
+            utils.save_data(curr_data)
 
             if result["unscheduled_tasks"]:
                 unscheduled_names = ", ".join([t["title"] for t in result["unscheduled_tasks"]])
@@ -351,7 +352,7 @@ with tab_calendar:
 
             st.rerun()
 
-    st.divider()  # horisontal line
+    st.divider()
     st.subheader("+ add new task")
 
     # тип задачи
@@ -410,7 +411,7 @@ with tab_calendar:
             has_conflict = False
             conflict_title = None
             if task_type == "fixed" and start_time_str:
-                has_conflict, conflict_title = app.check_fixed_task_conflict(
+                has_conflict, conflict_title = utils.check_fixed_task_conflict(
                     curr_data["users"][curr_user]["tasks"],
                     str(start_date_val),
                     start_time_str,
@@ -438,19 +439,20 @@ with tab_calendar:
                     "status": "scheduled" if task_type == "fixed" else "pending"
                 }
 
-                curr_data = app.load_data()
+                curr_data = utils.load_data()
                 curr_data["users"][curr_user]["tasks"].append(new_task)
-                app.save_data(curr_data)
+                utils.save_data(curr_data)
                 st.success(f"Task «{title}» was successfully added!")
                 st.rerun()
 
 
-
-# Контент для второй вкладки -------------------------------------------------------------------------------------------
+# =====================================================================================================================
+# Контент для второй вкладки ------------------------------------------------------------------------------------------
+# =====================================================================================================================
 with tab_shared:
     st.subheader("General Events & Proposals")
 
-    curr_data = app.load_data()
+    curr_data = utils.load_data()
     shared_events = curr_data.setdefault("shared_events", [])
     partner_user = "user_2" if curr_user == "user_1" else "user_1"
     partner_name = curr_data["users"][partner_user]["name"]
@@ -491,25 +493,25 @@ with tab_shared:
                         with c_acc:
                             if st.button("Accept", key=f"acc_{event['id']}", type="primary"):
                                 general.accept_shared_event(curr_data, event)
-                                app.save_data(curr_data)
+                                utils.save_data(curr_data)
                                 st.success("Accepted!")
                                 st.rerun()
                         with c_dec:
                             if st.button("Decline", key=f"dec_{event['id']}"):
                                 event["status"] = "declined"
-                                app.save_data(curr_data)
+                                utils.save_data(curr_data)
                                 st.rerun()
 
                     # Кнопка удаления для обеих сторон
                     if st.button("Delete Event", key=f"del_shared_{event['id']}"):
                         general.delete_shared_event(curr_data, event["id"])
-                        app.save_data(curr_data)
+                        utils.save_data(curr_data)
                         st.success("Event deleted")
                         st.rerun()
 
     st.divider()
 
-    # 2. ФОРМА ПРЕДЛОЖЕНИЯ НОВОЙ ВСТРЕЧИ
+    # Форма для предложения задачи
     # =========================================================================
     st.subheader("+ Propose New Event")
 
@@ -527,7 +529,7 @@ with tab_shared:
         event_date_str = str(event_date)
         event_time_str = event_start_time.strftime("%H:%M")
 
-        # ПРОВЕРКА ДОСТУПНОСТИ ОБОИХ УЧАСТНИКОВ В РЕАЛЬНОМ ВРЕМЕНИ
+        # проверка доступности обоих участников
         my_free, my_conflict = general.check_user_availability(
             curr_data["users"][curr_user]["tasks"], event_date_str, event_time_str, int(event_duration)
         )
@@ -571,26 +573,26 @@ with tab_shared:
                 }
 
                 curr_data["shared_events"].append(new_event)
-                app.save_data(curr_data)
+                utils.save_data(curr_data)
                 st.success(f"Proposal «{event_title}» sent to {partner_name}!")
                 st.rerun()
 
 
 # =====================================================================================================================
-# Контент для третьей вкладки: Memes
+# Контент для третьей вкладки: Memes ---------------------------------------------------------------------------------
 # =====================================================================================================================
 with tab_memes:
     st.subheader(" Meme Zone — Personal Anti-Burnout Library")
 
-    # Создаем папку для хранения загруженных картинок, если ее еще нет
+    # папка для хранения загруженных картинок
     os.makedirs("memes_uploads", exist_ok=True)
 
-    curr_data = app.load_data()
+    curr_data = utils.load_data()
     memes_list = curr_data.setdefault("memes", [])
     partner_user = "user_2" if curr_user == "user_1" else "user_1"
     partner_name = curr_data["users"][partner_user]["name"]
 
-    # 1. СЛУЧАЙНЫЙ МЕМ ИЗ ВАШЕЙ БИБЛИОТЕКИ
+    # 1) случайный мем из библиотеки
     # =========================================================================
     st.markdown("##### 🎲 Random Meme from Your Collection")
 
@@ -614,7 +616,7 @@ with tab_memes:
 
     st.divider()
 
-    # 2. ФОРМА ЗАГРУЗКИ НОВОГО МЕМА (Файлом или Ссылкой)
+    # 2) форма для загрузки нового мема (файлом или ссылкой)
     # =========================================================================
     st.subheader("+ Add Meme to Library")
 
@@ -631,7 +633,7 @@ with tab_memes:
             else:
                 saved_path = None
 
-                # Если загружен файл — сохраняем его локально в папку memes_uploads
+                # файл загружен —> сохраняем его локально в папку memes_uploads
                 if uploaded_file:
                     file_ext = uploaded_file.name.split(".")[-1]
                     file_id = str(uuid.uuid4())[:8]
@@ -649,20 +651,20 @@ with tab_memes:
                 }
 
                 curr_data["memes"].append(new_meme)
-                app.save_data(curr_data)
+                utils.save_data(curr_data)
                 st.success("New meme added to the library!")
                 st.rerun()
 
     st.divider()
 
-    # 3. ЛЕНТА / БИБЛИОТЕКА ВСЕХ МЕМОВ
+    # 3) библиотека всех мемов
     # =========================================================================
     st.markdown(f"##### Shared Library ({len(memes_list)} memes)")
 
     if not memes_list:
         st.info("No memes in the collection yet. Be the first to upload one!")
     else:
-        # Отображаем мемы сеткой по 2 в ряд
+        # отображаем мемы сеткой по 2 в ряд
         cols = st.columns(2)
         for idx, meme in enumerate(reversed(memes_list)):
             with cols[idx % 2]:
@@ -688,6 +690,6 @@ with tab_memes:
                                 pass
 
                         curr_data["memes"] = [m for m in curr_data["memes"] if m["id"] != meme["id"]]
-                        app.save_data(curr_data)
+                        utils.save_data(curr_data)
                         st.success("Meme removed")
                         st.rerun()

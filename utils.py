@@ -39,10 +39,6 @@ def get_daily_load_minutes(tasks: list, date_str:str) -> int:
 
 def check_fixed_task_conflict(user_tasks: list, date_str: str, start_time_str: str, duration_min: int,
                               exclude_task_id: str = None):
-    """
-    Проверяет, не пересекается ли создаваемая/редактируемая задача
-    с другими уже распланированными задачами пользователя.
-    """
     if not start_time_str:
         return False, None
 
@@ -50,18 +46,17 @@ def check_fixed_task_conflict(user_tasks: list, date_str: str, start_time_str: s
     req_end = req_start + duration_min
 
     for task in user_tasks:
-        # Игнорируем задачу, которую в данный момент редактируем
+        # игнорируем задачу, которую в данный момент редактируем
         if exclude_task_id and task.get("id") == exclude_task_id:
             continue
 
         t_date = task.get("date") or task.get("start_date")
 
-        # Проверяем пересечения только с задачами, у которых уже задано время
         if t_date == date_str and task.get("start_time") and task.get("end_time"):
             t_start = time_to_minutes(task["start_time"])
             t_end = time_to_minutes(task["end_time"])
 
-            # Формула пересечения временных интервалов
+            # пересечения временных интервалов
             if max(req_start, t_start) < min(req_end, t_end):
                 return True, task["title"]
 
@@ -69,10 +64,8 @@ def check_fixed_task_conflict(user_tasks: list, date_str: str, start_time_str: s
 
 
 def get_daily_progress(user_tasks: list, date_str: str):
-    """
-    Возвращает статистику выполнения задач на выбранный день:
-    (всего задач, выполнено задач, всего минут, выполнено минут, процент выполнения)
-    """
+    #статистика выполнения задач
+
     day_tasks = [
         t for t in user_tasks
         if (t.get("date") == date_str or t.get("start_date") == date_str)
