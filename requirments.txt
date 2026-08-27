@@ -1,0 +1,7 @@
+streamlit
+sqlalchemy
+bcrypt
+streamlit-calendar
+
+
+
