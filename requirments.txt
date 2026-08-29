@@ -2,6 +2,7 @@ streamlit
 sqlalchemy
 bcrypt
 streamlit-calendar
+extra_streamlit_components
 
 
 

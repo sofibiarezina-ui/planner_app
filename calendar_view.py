@@ -1,21 +1,17 @@
 import calendar
 import utils
 from datetime import date
+import crud
 
-
-def render_mini_calendar(selected_date: date, user_data: dict) -> str:
-    # генерирует HTML-код таблицы мини-календаря с подсветкой загрузки
+def render_mini_calendar(db, user, selected_date: date) -> str:
     year = selected_date.year
     month = selected_date.month
 
     cal = calendar.monthcalendar(year, month)
+    max_minutes = utils.get_max_work_minutes(user)
+    important_dates = set(crud.get_important_dates(db, user.id))
+    tasks = crud.get_user_tasks(db, user.id)
 
-    settings = user_data.get("settings", {})
-    max_minutes = utils.get_max_work_minutes(settings)
-    important_dates = set(user_data.get("important_dates", []))
-    tasks = user_data.get("tasks", [])
-
-    # CSS-стилизация под тему Streamlit
     html = """
     <style>
         .mini-cal { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
@@ -31,7 +27,6 @@ def render_mini_calendar(selected_date: date, user_data: dict) -> str:
 
     html += f"<div style='text-align: center; font-weight: bold; margin-bottom: 8px;'>"
     html += f"{months_ru[month]} {year}</div>"
-
     html += "<table class='mini-cal'><thead><tr>"
     for day_head in ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]:
         html += f"<th>{day_head}</th>"
@@ -41,21 +36,17 @@ def render_mini_calendar(selected_date: date, user_data: dict) -> str:
         html += "<tr>"
         for day in week:
             if day == 0:
-                html += "<td></td>"  # дни соседних месяцев
+                html += "<td></td>"
             else:
                 date_str = f"{year:04d}-{month:02d}-{day:02d}"
-
-                # 1) расчет загруженности (%)
-                used_min = utils.get_daily_load_minutes(tasks, date_str)
+                used_min = sum(t.duration_minutes for t in tasks if t.date == date_str and t.status in ["scheduled", "done"])
                 pct = min(100, int((used_min / max_minutes) * 100))
 
-                # 2) прозрачность фона зависит от загрузки (зеленый цвет)
                 bg_style = ""
                 if pct > 0:
-                    alpha = min(0.6, (pct / 100) * 0.6)  # максимум 0.6 прозрачности
+                    alpha = min(0.6, (pct / 100) * 0.6)
                     bg_style = f"background-color: rgba(46, 160, 67, {alpha:.2f});"
 
-                # 3) классы для выбранной и важной даты
                 classes = []
                 if date_str == str(selected_date):
                     classes.append("selected")
