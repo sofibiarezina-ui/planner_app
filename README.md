@@ -40,3 +40,5 @@ Planner TWI — это полнофункциональное веб-прило�
    streamlit run app.py
 4. Откройте браузер по адресу:
    http://localhost:8501/
+
+или перейдите по данной ссылке: https://plannerappgit-gsx7pyeymwr3cqtc2oahyr.streamlit.app/
