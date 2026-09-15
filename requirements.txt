@@ -1,8 +1,7 @@
 streamlit
 sqlalchemy
 bcrypt
+psycopg2-binary
 streamlit-calendar
 extra_streamlit_components
-
-
 
