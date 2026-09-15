@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from datetime import datetime
+import streamlit as st
 
 Base = declarative_base()
 
@@ -85,8 +85,14 @@ class Meme(Base):
     date = Column(String(10), nullable=False)
 
 
-DATABASE_URL = "sqlite:///planner.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Получение URL из настроек Streamlit Cloud
+DATABASE_URL = st.secrets["DATABASE_URL"]
+
+# Исправление протокола для SQLAlchemy, если провайдер возвращает postgres://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
